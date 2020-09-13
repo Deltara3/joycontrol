@@ -4,18 +4,24 @@ import argparse
 import asyncio
 import logging
 import os
+import pygame 
+import time
 
 from aioconsole import ainput
 
 from joycontrol import logging_default as log, utils
 from joycontrol.command_line_interface import ControllerCLI
 from joycontrol.controller import Controller
-from joycontrol.controller_state import ControllerState, button_push, button_press, button_release
+from joycontrol.controller_state import ControllerState, button_push
 from joycontrol.memory import FlashMemory
 from joycontrol.protocol import controller_protocol_factory
 from joycontrol.server import create_hid_server
 
 logger = logging.getLogger(__name__)
+pygame.joystick.init()
+#pygame.display.set_mode((100,100))
+
+pygame.init()
 
 """Emulates Switch controller. Opens joycontrol.command_line_interface to send button commands and more.
 
@@ -53,218 +59,6 @@ Options:
                                             connection.
 """
 
-
-async def test_controller_buttons(controller_state: ControllerState):
-    """
-    Example controller script.
-    Navigates to the "Test Controller Buttons" menu and presses all buttons.
-    """
-    if controller_state.get_controller() != Controller.PRO_CONTROLLER:
-        raise ValueError('This script only works with the Pro Controller!')
-
-    # waits until controller is fully connected
-    await controller_state.connect()
-
-    await ainput(prompt='Make sure the Switch is in the Home menu and press <enter> to continue.')
-
-    """
-    # We assume we are in the "Change Grip/Order" menu of the switch
-    await button_push(controller_state, 'home')
-
-    # wait for the animation
-    await asyncio.sleep(1)
-    """
-
-    # Goto settings
-    await button_push(controller_state, 'down', sec=1)
-    await button_push(controller_state, 'right', sec=2)
-    await asyncio.sleep(0.3)
-    await button_push(controller_state, 'left')
-    await asyncio.sleep(0.3)
-    await button_push(controller_state, 'a')
-    await asyncio.sleep(0.3)
-
-    # go all the way down
-    await button_push(controller_state, 'down', sec=4)
-    await asyncio.sleep(0.3)
-
-    # goto "Controllers and Sensors" menu
-    for _ in range(2):
-        await button_push(controller_state, 'up')
-        await asyncio.sleep(0.3)
-    await button_push(controller_state, 'right')
-    await asyncio.sleep(0.3)
-
-    # go all the way down
-    await button_push(controller_state, 'down', sec=3)
-    await asyncio.sleep(0.3)
-
-    # goto "Test Input Devices" menu
-    await button_push(controller_state, 'up')
-    await asyncio.sleep(0.3)
-    await button_push(controller_state, 'a')
-    await asyncio.sleep(0.3)
-
-    # goto "Test Controller Buttons" menu
-    await button_push(controller_state, 'a')
-    await asyncio.sleep(0.3)
-
-    # push all buttons except home and capture
-    button_list = controller_state.button_state.get_available_buttons()
-    if 'capture' in button_list:
-        button_list.remove('capture')
-    if 'home' in button_list:
-        button_list.remove('home')
-
-    user_input = asyncio.ensure_future(
-        ainput(prompt='Pressing all buttons... Press <enter> to stop.')
-    )
-
-    # push all buttons consecutively until user input
-    while not user_input.done():
-        for button in button_list:
-            await button_push(controller_state, button)
-            await asyncio.sleep(0.1)
-
-            if user_input.done():
-                break
-
-    # await future to trigger exceptions in case something went wrong
-    await user_input
-
-    # go back to home
-    await button_push(controller_state, 'home')
-
-
-def ensure_valid_button(controller_state, *buttons):
-    """
-    Raise ValueError if any of the given buttons os not part of the controller state.
-    :param controller_state:
-    :param buttons: Any number of buttons to check (see ButtonState.get_available_buttons)
-    """
-    for button in buttons:
-        if button not in controller_state.button_state.get_available_buttons():
-            raise ValueError(f'Button {button} does not exist on {controller_state.get_controller()}')
-
-
-async def mash_button(controller_state, button, interval):
-    # wait until controller is fully connected
-    await controller_state.connect()
-    ensure_valid_button(controller_state, button)
-
-    user_input = asyncio.ensure_future(
-        ainput(prompt=f'Pressing the {button} button every {interval} seconds... Press <enter> to stop.')
-    )
-    # push a button repeatedly until user input
-    while not user_input.done():
-        await button_push(controller_state, button)
-        await asyncio.sleep(float(interval))
-
-    # await future to trigger exceptions in case something went wrong
-    await user_input
-
-
-def _register_commands_with_controller_state(controller_state, cli):
-    """
-    Commands registered here can use the given controller state.
-    The doc string of commands will be printed by the CLI when calling "help"
-    :param cli:
-    :param controller_state:
-    """
-    async def test_buttons():
-        """
-        test_buttons - Navigates to the "Test Controller Buttons" menu and presses all buttons.
-        """
-        await test_controller_buttons(controller_state)
-
-    cli.add_command(test_buttons.__name__, test_buttons)
-
-    # Mash a button command
-    async def mash(*args):
-        """
-        mash - Mash a specified button at a set interval
-
-        Usage:
-            mash <button> <interval>
-        """
-        if not len(args) == 2:
-            raise ValueError('"mash_button" command requires a button and interval as arguments!')
-
-        button, interval = args
-        await mash_button(controller_state, button, interval)
-
-    cli.add_command(mash.__name__, mash)
-
-    # Hold a button command
-    async def hold(*args):
-        """
-        hold - Press and hold specified buttons
-
-        Usage:
-            hold <button>
-
-        Example:
-            hold a b
-        """
-        if not args:
-            raise ValueError('"hold" command requires a button!')
-
-        ensure_valid_button(controller_state, *args)
-
-        # wait until controller is fully connected
-        await controller_state.connect()
-        await button_press(controller_state, *args)
-
-    cli.add_command(hold.__name__, hold)
-
-    # Release a button command
-    async def release(*args):
-        """
-        release - Release specified buttons
-
-        Usage:
-            release <button>
-
-        Example:
-            release a b
-        """
-        if not args:
-            raise ValueError('"release" command requires a button!')
-
-        ensure_valid_button(controller_state, *args)
-
-        # wait until controller is fully connected
-        await controller_state.connect()
-        await button_release(controller_state, *args)
-
-    cli.add_command(release.__name__, release)
-
-    # Create nfc command
-    async def nfc(*args):
-        """
-        nfc - Sets nfc content
-
-        Usage:
-            nfc <file_name>          Set controller state NFC content to file
-            nfc remove               Remove NFC content from controller state
-        """
-        logger.error('NFC Support was removed from joycontrol - see https://github.com/mart1nro/joycontrol/issues/80')
-        if controller_state.get_controller() == Controller.JOYCON_L:
-            raise ValueError('NFC content cannot be set for JOYCON_L')
-        elif not args:
-            raise ValueError('"nfc" command requires file path to an nfc dump as argument!')
-        elif args[0] == 'remove':
-            controller_state.set_nfc(None)
-            print('Removed nfc content.')
-        else:
-            _loop = asyncio.get_event_loop()
-            with open(args[0], 'rb') as nfc_file:
-                content = await _loop.run_in_executor(None, nfc_file.read)
-                controller_state.set_nfc(content)
-
-    cli.add_command(nfc.__name__, nfc)
-
-
 async def _main(args):
     # parse the spi flash
     if args.spi_flash:
@@ -278,7 +72,6 @@ async def _main(args):
     controller = Controller.from_arg(args.controller)
 
     with utils.get_output(path=args.log, default=None) as capture_file:
-        # prepare the the emulated controller
         factory = controller_protocol_factory(controller, spi_flash=spi_flash)
         ctl_psm, itr_psm = 17, 19
         transport, protocol = await create_hid_server(factory, reconnect_bt_addr=args.reconnect_bt_addr,
@@ -290,19 +83,179 @@ async def _main(args):
 
         # Create command line interface and add some extra commands
         cli = ControllerCLI(controller_state)
-        _register_commands_with_controller_state(controller_state, cli)
-        cli.add_command('amiibo', ControllerCLI.deprecated('Command was removed - use "nfc" instead!'))
 
-        # set default nfc content supplied by argument
-        if args.nfc is not None:
-            await cli.commands['nfc'](args.nfc)
+        # Wrap the script so we can pass the controller state. The doc string will be printed when calling 'help'
 
-        # run the cli
+        async def _run_Controller():
+            '''
+            - Controller
+            '''
+            await xbox(controller_state)
+        
+
+        # add the script from above
+        #cli.add_command('mash', call_mash_button)
+        cli.add_command('Controller', _run_Controller)
+
+       
+
         try:
             await cli.run()
         finally:
             logger.info('Stopping communication...')
             await transport.close()
+
+
+async def xbox(controller_state: ControllerState):# this method binds keyboard to controller for CLI keyboard control of switch
+    if controller_state.get_controller() != Controller.PRO_CONTROLLER:
+        raise ValueError('This script only works with the Pro Controller!')
+    # waits until controller is fully connected
+    await controller_state.connect()
+
+    
+    lv = 0
+    lh = 0
+    rv = 0
+    rh = 0
+    #button state handler callbacks
+
+    Working = True
+    start_time = time.time()
+    while Working:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    Working = False
+                    break
+            if event.type == pygame.USEREVENT:
+                pygame.time.set_timer(pygame.USEREVENT, 0)
+                Working = False
+                break
+                
+        LeftStick = controller_state.l_stick_state
+        RightStick = controller_state.r_stick_state
+
+        
+        joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        for i in range(pygame.joystick.get_count()):
+            joysticks[i].init()
+      
+        for i in range(pygame.joystick.get_count()):
+            #Left Stick
+            
+            if round(lh,-1) != round(2048 + joysticks[i].get_axis(0)*1792,-1) or round(lv,-1) != round(2048 + joysticks[i].get_axis(1)*1792,-1):
+                lh = (2048 + joysticks[i].get_axis(0)*1792)
+                lv = (2048 - joysticks[i].get_axis(1)*1792)
+
+                if lh < 2150 and lh > 1950:
+                    lh = 2048
+                if lv < 2150 and lv > 1950:
+                    lv = 2048
+                
+                ControllerCLI._set_stick(LeftStick, 'h', lh)
+                ControllerCLI._set_stick(LeftStick, 'v', lv)
+        
+                
+
+            #Right Stick 
+            if round(rh,-1) != round(2048 + joysticks[i].get_axis(3)*1792,-1) or round(rv,-1) != round(2048 + joysticks[i].get_axis(4)*1792,-1):
+                rh = (2048 + joysticks[i].get_axis(3)*1792)
+                rv = (2048 - joysticks[i].get_axis(4)*1792)
+
+                if rh < 2150 and rh > 1950:
+                    rh = 2048
+                if rv < 2150 and rv > 1950:
+                    rv = 2048
+                    
+                ControllerCLI._set_stick(RightStick, 'h', rh)
+                ControllerCLI._set_stick(RightStick, 'v', rv)
+                
+
+
+            #Triggers
+            if joysticks[i].get_axis(2) >= 0.2:
+                controller_state.button_state.set_button('zl')
+            else:
+                controller_state.button_state.set_button('zl', pushed=False)
+
+            if joysticks[i].get_axis(5) >= -0.2:
+                controller_state.button_state.set_button('zr')
+            else:
+                controller_state.button_state.set_button('zr', pushed=False)
+
+
+
+            #Buttons
+
+            if joysticks[i].get_button(0) == 1: #B
+                controller_state.button_state.set_button('b')
+            else:
+                controller_state.button_state.set_button('b', pushed=False)
+
+            if joysticks[i].get_button(1) == 1: #A
+                controller_state.button_state.set_button('a')
+            else:
+                controller_state.button_state.set_button('a', pushed=False)
+
+            if joysticks[i].get_button(2) == 1: #Y
+                controller_state.button_state.set_button('y')
+            else:
+                controller_state.button_state.set_button('y', pushed=False)
+
+            if joysticks[i].get_button(3) == 1: #X
+                controller_state.button_state.set_button('x')
+            else:
+                controller_state.button_state.set_button('x', pushed=False)
+
+            #Trigger Buttons
+            if joysticks[i].get_button(4) == 1: #Left
+                controller_state.button_state.set_button('l')
+            else:
+                controller_state.button_state.set_button('l', pushed=False)
+
+            if joysticks[i].get_button(5) == 1: #Right
+                controller_state.button_state.set_button('r')
+            else:
+                controller_state.button_state.set_button('r', pushed=False)
+
+            #Other Buttons
+
+            if joysticks[i].get_button(6) == 1: #Minius
+                controller_state.button_state.set_button('minus')
+            else:
+                controller_state.button_state.set_button('minus', pushed=False)
+                
+            if joysticks[i].get_button(7) == 1: #plus
+                controller_state.button_state.set_button('plus')
+            else:
+                controller_state.button_state.set_button('plus', pushed=False)
+                
+                
+
+            #Dpad
+            hat = joysticks[i].get_hat( 0 )
+            if hat[0] == 1: #Right
+                controller_state.button_state.set_button('right')
+            else:
+                controller_state.button_state.set_button('right', pushed=False)
+
+            if hat[0] == -1: #Left
+                controller_state.button_state.set_button('left')
+            else:
+                controller_state.button_state.set_button('left', pushed=False)
+                
+            if hat[1] == 1: #Up
+                controller_state.button_state.set_button('up')
+            else:
+                controller_state.button_state.set_button('up', pushed=False)
+
+            if hat[1] == -1: #Down
+                controller_state.button_state.set_button('down')
+            else:
+                controller_state.button_state.set_button('down', pushed=False)
+                
+            await controller_state.send()
+
 
 
 if __name__ == '__main__':
