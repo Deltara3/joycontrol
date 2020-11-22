@@ -1,13 +1,18 @@
 # joycontrol
 Emulate Nintendo Switch Controllers over Bluetooth.
 
-Tested on Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian GNU/Linux 10 (buster)
+Tested on Ubuntu 20.10, Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian GNU/Linux 10 (buster)
 
 ## Features
 Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - button commands
 - stick state
 - ~~nfc data~~ (removed, see [#80](https://github.com/mart1nro/joycontrol/issues/80))
+- using controllers by running the "Controller" command once connected to the Switch (see Supported Controllers for a list of currently working gamepads)
+
+## Supported Controllers
+- Xbox One Wireless Controller (SomeWhatHappyDuk did most of it, I added support for home via the guide button, and the stick clicks)
+- More planned soon
 
 ## Installation
 - Install dependencies
