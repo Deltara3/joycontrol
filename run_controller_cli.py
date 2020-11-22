@@ -229,9 +229,19 @@ async def xbox(controller_state: ControllerState):# this method binds keyboard t
                 controller_state.button_state.set_button('plus')
             else:
                 controller_state.button_state.set_button('plus', pushed=False)
+            if joysticks[i].get_button(8) == 1: #Home
+                controller_state.button_state.set_button('home')
+            else:
+                controller_state.button_state.set_button('home', pushed=False)
+            if joysticks[i].get_button(9) == 1: #Left Stick Click
+                controller_state.button_state.set_button('l_stick')
+            else:
+                controller_state.button_state.set_button('l_stick', pushed=False)
+            if joysticks[i].get_button(10) == 1: #Right Stick Click
+                controller_state.button_state.set_button('r_stick')
+            else:
+                controller_state.button_state.set_button('r_stick', pushed=False)
                 
-                
-
             #Dpad
             hat = joysticks[i].get_hat( 0 )
             if hat[0] == 1: #Right
