@@ -11,7 +11,7 @@ Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - ~~nfc data~~ (removed, see [#80](https://github.com/mart1nro/joycontrol/issues/80))
 
 ## Supported Controllers
-Running the "Controller" command, once connected to the Switch, you can use these controllers.
+Running the "Controller" command, once connected to the Switch, you can use these controllers:
 - Xbox One Wireless Controller
 - More planned soon
 
