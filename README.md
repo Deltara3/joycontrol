@@ -11,7 +11,7 @@ Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - using controllers by running the "Controller" command once connected to the Switch (see Supported Controllers for a list of currently working gamepads)
 
 ## Supported Controllers
-- Xbox One Wireless Controller (SomeWhatHappyDuk did most of it, I added support for home via the guide button, and the stick clicks)
+- Xbox One Wireless Controller
 - More planned soon
 
 ## Installation
