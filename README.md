@@ -7,10 +7,11 @@ Tested on Ubuntu 20.10, Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian 
 Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - button commands
 - stick state
+- using controllers (see Supported Controllers for more information)
 - ~~nfc data~~ (removed, see [#80](https://github.com/mart1nro/joycontrol/issues/80))
-- using controllers by running the "Controller" command once connected to the Switch (see Supported Controllers for a list of currently working gamepads)
 
 ## Supported Controllers
+Running the "Controller" command, once connected to the Switch, you can use these controllers.
 - Xbox One Wireless Controller
 - More planned soon
 
