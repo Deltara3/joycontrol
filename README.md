@@ -13,6 +13,7 @@ Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 ## Supported Controllers
 Running the "Controller" command, once connected to the Switch, you can use these controllers:
 - Xbox One Wireless Controller
+- Xbox One Wired Controller (Should work, I don't have one to test)
 - More planned soon
 
 ## Installation
