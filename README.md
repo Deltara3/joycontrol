@@ -1,5 +1,6 @@
 # joycontrol
 Emulate Nintendo Switch Controllers over Bluetooth.
+Wireless controllers must be connected to the computer via a cable, as the script poses your computer as a controller.
 
 Tested on Ubuntu 20.10, Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian GNU/Linux 10 (buster)
 
@@ -11,7 +12,6 @@ Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - ~~nfc data~~ (removed, see [#80](https://github.com/mart1nro/joycontrol/issues/80))
 
 ## Supported Controllers
-Wireless controllers must be connected to the computer via a cable, as the script poses your computer as a controller.
 Running the "Controller" command, once connected to the Switch, you can use these controllers:
 - Xbox One Wireless Controller
 - Xbox One Wired Controller
