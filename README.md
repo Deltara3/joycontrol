@@ -9,7 +9,7 @@ Tested on Ubuntu 20.10, Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian 
 Emulation of JOYCON_R, JOYCON_L and PRO_CONTROLLER. Able to send:
 - button commands
 - stick state
-- using controllers (see Supported Controllers for more information)
+- input from controllers (see Supported Controllers for more information)
 - ~~nfc data~~ (removed, see [#80](https://github.com/mart1nro/joycontrol/issues/80))
 
 ## Supported Controllers
