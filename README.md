@@ -1,8 +1,6 @@
 # joycontrol
 Emulate Nintendo Switch Controllers over Bluetooth.
 
-Wireless controllers must be connected to the computer via a cable, as the script poses your computer as a controller.
-
 Tested on Ubuntu 20.10, Ubuntu 19.10, and with Raspberry Pi 3B+ and 4B Raspbian GNU/Linux 10 (buster)
 
 ## Features
