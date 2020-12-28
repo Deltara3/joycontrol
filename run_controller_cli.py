@@ -96,6 +96,7 @@ async def _main(args):
         # add the script from above
         #cli.add_command('mash', call_mash_button)
         cli.add_command('Controller', _run_Controller)
+        cli.add_command('controller', _run_Controller)
 
        
 
